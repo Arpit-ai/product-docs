@@ -41,6 +41,9 @@
     "prisma": "^6.9.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "y-protocols": "^1.0.7",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.30",
     "zod": "^3.25.56"
   },
   "devDependencies": {
