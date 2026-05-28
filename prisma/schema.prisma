@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  role      UserRole   @default(EDITOR)
+  active    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  documents   Document[]
+  versions    Version[]
+  uploads     Media[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+model Folder {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  parent    Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[]   @relation("FolderHierarchy")
+  documents Document[]
+
+  @@map("folders")
+}
+
+model Document {
+  id        String     @id @default(cuid())
+  title     String
+  slug      String     @unique
+  content   String     @default("")
+  status    DocumentStatus @default(DRAFT)
+  folderId  String?
+  createdBy String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  folder    Folder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  creator   User       @relation(fields: [createdBy], references: [id])
+  versions     Version[]
+  tags         Tag[]
+  activityLogs ActivityLog[]
+
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Version {
+  id        String     @id @default(cuid())
+  content   String
+  documentId String
+  userId    String
+  changeSummary String @default("")
+  createdAt DateTime   @default(now())
+
+  document  Document   @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@map("versions")
+}
+
+model Tag {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  documents Document[]
+  createdAt DateTime   @default(now())
+
+  @@map("tags")
+}
+
+model Media {
+  id        String     @id @default(cuid())
+  filename  String
+  filepath  String
+  mimeType  String
+  size      Int
+  uploadedBy String
+  createdAt DateTime   @default(now())
+
+  user      User       @relation(fields: [uploadedBy], references: [id])
+
+  @@map("media")
+}
+
+model ActivityLog {
+  id         String    @id @default(cuid())
+  action     String
+  userId     String
+  documentId String?
+  metadata   String    @default("")
+  createdAt  DateTime  @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  @@map("activity_logs")
+}
