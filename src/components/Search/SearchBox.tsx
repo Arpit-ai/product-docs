@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface SearchResult {
   id: string;
@@ -16,34 +17,72 @@ export function SearchBox() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const router = useRouter();
 
-  const handleSearch = useCallback(async (q: string) => {
-    setQuery(q);
-
-    if (q.length < 2) {
+  useEffect(() => {
+    if (query.length < 2) {
       setResults([]);
       setShowResults(false);
+      setSearching(false);
+      setSelectedIndex(-1);
       return;
     }
 
     setSearching(true);
     setShowResults(true);
 
-    try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
-        credentials: "include",
-      });
+    const timeout = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+          credentials: "include",
+        });
 
-      if (response.ok) {
-        const data = await response.json();
-        setResults(data.results);
+        if (response.ok) {
+          const data = await response.json();
+          setResults(data.results);
+          setSelectedIndex(data.results.length ? 0 : -1);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setSearching(false);
       }
-    } catch (err) {
-      console.error("Search error:", err);
-    } finally {
-      setSearching(false);
-    }
-  }, []);
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [query]);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!showResults || !results.length) return;
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setSelectedIndex((current) => (current + 1) % results.length);
+      }
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setSelectedIndex((current) =>
+          current <= 0 ? results.length - 1 : current - 1
+        );
+      }
+
+      if (event.key === "Enter" && selectedIndex >= 0) {
+        event.preventDefault();
+        router.push(`/documents/${results[selectedIndex].id}`);
+        setShowResults(false);
+        setQuery("");
+      }
+
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setShowResults(false);
+      }
+    },
+    [results, selectedIndex, router, showResults]
+  );
 
   return (
     <div className="relative">
@@ -51,9 +90,13 @@ export function SearchBox() {
         <input
           type="text"
           value={query}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+          }}
+          onKeyDown={handleKeyDown}
           placeholder="Search documents..."
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          aria-label="Search documents"
         />
         {searching && (
           <div className="absolute right-3 top-2 text-gray-400">
@@ -82,12 +125,14 @@ export function SearchBox() {
           {results.length === 0 ? (
             <div className="p-4 text-gray-500 text-center text-sm">No results found</div>
           ) : (
-            <ul className="divide-y">
-              {results.map((result) => (
+            <ul className="divide-y" role="listbox">
+              {results.map((result, index) => (
                 <li key={result.id}>
                   <Link
                     href={`/documents/${result.id}`}
-                    className="block p-3 hover:bg-gray-50 transition"
+                    className={`block p-3 transition ${
+                      index === selectedIndex ? "bg-blue-50" : "hover:bg-gray-50"
+                    }`}
                     onClick={() => {
                       setShowResults(false);
                       setQuery("");

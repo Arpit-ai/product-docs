@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAdminAuth } from "@/lib/middleware";
+import { withViewerAuth, withAdminAuth } from "@/lib/middleware";
 import { prisma } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
-  return withAdminAuth(request, async (req, user) => {
+  return withViewerAuth(request, async (req, user) => {
     try {
       const folders = await prisma.folder.findMany({
         include: {

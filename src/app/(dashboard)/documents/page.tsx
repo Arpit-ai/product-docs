@@ -43,7 +43,7 @@ export default function DocumentsPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900">Documents</h1>
           {userRole === "VIEWER" && (
@@ -79,12 +79,24 @@ export default function DocumentsPage() {
               key={doc.id}
               className="p-4 bg-white rounded shadow hover:shadow-lg transition"
             >
-              <Link href={`/documents/${doc.id}`}>
-                <h3 className="text-lg font-semibold text-blue-600 hover:underline">
-                  {doc.title}
-                </h3>
-              </Link>
-              <p className="text-gray-600 text-sm mt-2">Status: {doc.status}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <Link href={`/documents/${doc.id}`}>
+                  <h3 className="text-lg font-semibold text-blue-600 hover:underline">
+                    {doc.title}
+                  </h3>
+                </Link>
+                <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  {doc.status}
+                </span>
+              </div>
+              <div className="mt-3 text-sm text-gray-600 flex flex-wrap gap-2">
+                {doc.folder ? (
+                  <span className="px-2 py-1 bg-gray-100 rounded">Folder: {doc.folder.name}</span>
+                ) : (
+                  <span className="px-2 py-1 bg-gray-100 rounded">No folder</span>
+                )}
+                <span>Updated {new Date(doc.updatedAt).toLocaleDateString()}</span>
+              </div>
             </div>
           ))}
         </div>

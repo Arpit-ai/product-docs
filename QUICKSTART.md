@@ -1,6 +1,6 @@
 # Product Docs - Quick Start Guide
 
-Get Product Docs running in a few minutes.
+Get Product Docs running with the professional Notion-style editor in a few minutes.
 
 ## 🚀 Start the App
 
@@ -71,8 +71,12 @@ ALLOW_PUBLIC_REGISTRATION="false"
 2. Click **New Document** (Admin and Editor only)
 3. Title: e.g. `Getting Started`
 4. Click **Create Document**
-5. Write in the editor; use the toolbar for formatting
-6. Click **Save**
+5. **Write in the Notion-style editor:**
+   - Type `/` to open slash commands and insert blocks (headings, lists, code, tables, etc.)
+   - Use keyboard shortcuts: `Cmd+B` for bold, `Cmd+I` for italic, `Cmd+K` for links
+   - Drag blocks to reorder them
+   - Click the **Shortcuts** button to view all keyboard commands
+6. Click **Save** (auto-saves as you type)
 7. Change status to **Published** when ready
 
 ## 🔍 Search

@@ -15,6 +15,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -41,6 +43,38 @@ export default function UsersPage() {
     fetchUsers();
   }, []);
 
+  async function updateUser(id: string, updates: { role?: string; active?: boolean }) {
+    setError("");
+    setFeedback("");
+    setSavingUserId(id);
+
+    try {
+      const response = await fetch(`/api/users/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setError(data.error || "Failed to update user");
+        return;
+      }
+
+      const updated = await response.json();
+      setUsers((current) => current.map((user) => (user.id === id ? updated : user)));
+      setFeedback("User updated successfully.");
+    } catch (err) {
+      console.error("Error updating user:", err);
+      setError("Failed to update user");
+    } finally {
+      setSavingUserId(null);
+    }
+  }
+
   if (loading) {
     return <div>Loading users...</div>;
   }
@@ -53,6 +87,12 @@ export default function UsersPage() {
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded">
           <p className="text-red-800">{error}</p>
+        </div>
+      )}
+
+      {feedback && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded">
+          <p className="text-green-800">{feedback}</p>
         </div>
       )}
 
@@ -78,6 +118,9 @@ export default function UsersPage() {
                 <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
                   Joined
                 </th>
+                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -86,19 +129,40 @@ export default function UsersPage() {
                   <td className="px-6 py-3 text-sm font-medium">{user.name}</td>
                   <td className="px-6 py-3 text-sm text-gray-600">{user.email}</td>
                   <td className="px-6 py-3 text-sm">
-                    <span className="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                      {user.role}
-                    </span>
+                    <select
+                      value={user.role}
+                      onChange={(e) => updateUser(user.id, { role: e.target.value })}
+                      disabled={savingUserId === user.id}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="ADMIN">Admin</option>
+                      <option value="EDITOR">Editor</option>
+                      <option value="VIEWER">Viewer</option>
+                    </select>
                   </td>
                   <td className="px-6 py-3 text-sm">
-                    {user.active ? (
-                      <span className="text-green-600">Active</span>
-                    ) : (
-                      <span className="text-red-600">Disabled</span>
-                    )}
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded text-xs font-semibold ${
+                        user.active
+                          ? "bg-green-50 text-green-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      {user.active ? "Active" : "Disabled"}
+                    </span>
                   </td>
                   <td className="px-6 py-3 text-sm text-gray-600">
                     {new Date(user.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-6 py-3 text-sm space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => updateUser(user.id, { active: !user.active })}
+                      disabled={savingUserId === user.id}
+                      className="rounded px-3 py-1 text-sm border border-gray-300 bg-white hover:bg-gray-50"
+                    >
+                      {user.active ? "Disable" : "Enable"}
+                    </button>
                   </td>
                 </tr>
               ))}

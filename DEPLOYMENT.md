@@ -1,6 +1,6 @@
 # Deployment Guide — Product Docs
 
-Self-hosted deployment for **internal team documentation** (private wiki). This is not a public-facing docs CDN; all routes require authentication except `/login` and `/register` (when enabled).
+Self-hosted deployment for **internal team documentation** (private wiki) with a professional Notion-style editor. All routes require authentication except `/login` and `/register` (when enabled).
 
 ## Documentation index
 

@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
           status: true,
           createdAt: true,
           updatedAt: true,
+          folder: { select: { id: true, name: true } },
         },
         orderBy: { updatedAt: "desc" },
       });

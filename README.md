@@ -1,13 +1,18 @@
 # Product Docs - Professional Documentation Platform
 
-A self-hosted, open-source **internal** documentation platform built with Next.js, TipTap, and SQLite. Use it as a Confluence/Notion-style team wiki for product docs, runbooks, and guides — not a public customer-facing docs site.
+A self-hosted, open-source **internal** documentation platform built with Next.js, EditorJS, and SQLite. Use it as a **Notion-style team wiki** for product docs, runbooks, and guides — with a fully block-based, professional editor.
 
 ## ✨ Features
 
-- **Rich Text Editor** (TipTap)
-  - Headings, bold/italic/strike, lists, blockquotes, dividers
-  - Code blocks with syntax highlighting
-  - Images (via URL), links, YouTube embeds
+- **Notion-Style Block Editor** (EditorJS)
+  - **Slash Commands** (`/`) for instant block access
+  - 12+ block types: Headings (H1-H6), Paragraphs, Lists, Checklists, Code blocks, Quotes, Tables, Images, Videos, Dividers
+  - **Drag-and-drop** block reordering
+  - Rich inline formatting: Bold, Italic, Underline, Links, Code highlights
+  - AI-powered suggestions framework (expansion, summarization, tone)
+  - Keyboard shortcuts modal (Cmd+B/I/U, Cmd+K, Tab/Shift+Tab)
+  - Live word & block counting
+  - Auto-save with version tracking
   - Undo / redo
 
 - **Document Management**
@@ -34,20 +39,24 @@ A self-hosted, open-source **internal** documentation platform built with Next.j
 - **Self-Hosted**
   - Docker Compose
   - SQLite by default; PostgreSQL supported via `DATABASE_URL`
+- **Public Docs Site**
+  - Publish content as public documentation
+  - Public docs landing page at `/docs`
+  - Public search for published content
 
 ## 🚀 Quick Start
 
-See **[QUICKSTART.md](QUICKSTART.md)** for a 2-minute walkthrough.
+See **[QUICKSTART.md](QUICKSTART.md)** for a 3-minute walkthrough.
 
 ```bash
 git clone <your-repo-url>
 cd product-docs
 npm install
-npx prisma migrate dev
+npx prisma db push      # Initialize database
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) — first registered user becomes **Admin**.
+Open [http://localhost:3000](http://localhost:3000) — first registered user becomes **Admin**. Start writing with the Notion-style editor: type `/` for slash commands!
 
 **Docker:**
 
@@ -78,7 +87,8 @@ docker compose up -d --build
 4. Set status: Draft, Published, or Archived
 
 ### Search
-- Use the search box in the **dashboard sidebar**
+- Use the search box in the **dashboard sidebar** for internal docs
+- Use the public search box on `/docs` for published docs
 - Matches title and content; results ranked by relevance
 
 ### View-only (Viewer)
@@ -201,6 +211,7 @@ Authorization: Bearer <JWT_TOKEN>
 | `GET /documents` | Viewer+ |
 | `POST /documents` | Editor+ |
 | `GET/PUT/DELETE /documents/[id]` | GET: Viewer+; mutate: Editor+ |
+| `GET /api/public/search?q=` | Public |
 | `GET /search?q=` | Viewer+ |
 | `GET /users` | Admin |
 | `GET /activity` | Admin |
@@ -220,7 +231,7 @@ Authorization: Bearer <JWT_TOKEN>
 - [ ] Folder tree UI
 - [ ] Tag management
 - [ ] User role editing in admin UI
-- [ ] Public read-only docs site (optional)
+- [x] Public docs site via `/docs`
 - [ ] Real-time collaboration, 2FA, LDAP
 
 ## 📄 License
