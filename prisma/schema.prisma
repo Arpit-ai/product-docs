@@ -24,6 +24,7 @@ model User {
   versions    Version[]
   uploads     Media[]
   activityLogs ActivityLog[]
+  templates   Template[]
 
   @@map("users")
 }
@@ -46,6 +47,7 @@ model Folder {
   parent    Folder?    @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children  Folder[]   @relation("FolderHierarchy")
   documents Document[]
+  templates Template[]
 
   @@map("folders")
 }
@@ -125,4 +127,19 @@ model ActivityLog {
   document Document? @relation(fields: [documentId], references: [id], onDelete: SetNull)
 
   @@map("activity_logs")
+}
+
+model Template {
+  id        String   @id @default(cuid())
+  name      String
+  blocks    Json     // EditorJS block structure
+  folderId  String?
+  createdBy String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  folder    Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [createdBy], references: [id])
+
+  @@map("templates")
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { extractTextFromEditorJS, findMatches, generateSnippet, calculateRelevance } from "@/lib/search";
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,22 +30,27 @@ export async function GET(request: NextRequest) {
     });
 
     const enriched = results.map((doc) => {
-      const plainText = doc.content.replace(/<[^>]+>/g, "");
+      let parsedBlocks: any[] = [];
+      if (doc.content) {
+        try {
+          const parsed = JSON.parse(doc.content);
+          parsedBlocks = Array.isArray(parsed.blocks) ? parsed.blocks : [];
+        } catch {
+          parsedBlocks = [];
+        }
+      }
+
+      const plainText = parsedBlocks.length
+        ? extractTextFromEditorJS(parsedBlocks)
+        : doc.content.replace(/<[^>]+>/g, "");
+
       const lowerContent = plainText.toLowerCase();
       const lowerQ = q.toLowerCase();
       const titleMatch = doc.title.toLowerCase().includes(lowerQ) ? 2 : 0;
-      const contentMatches = (lowerContent.match(new RegExp(lowerQ, "gi")) || []).length;
-      const relevance = titleMatch * 10 + contentMatches;
+      const matches = findMatches(`${doc.title} ${plainText}`, lowerQ);
+      const relevance = titleMatch * 10 + calculateRelevance(plainText, matches);
 
-      const index = lowerContent.indexOf(lowerQ);
-      let snippet = "";
-      if (index !== -1) {
-        const start = Math.max(0, index - 60);
-        const end = Math.min(plainText.length, index + q.length + 60);
-        snippet = plainText.substring(start, end);
-        if (start > 0) snippet = "..." + snippet;
-        if (end < plainText.length) snippet += "...";
-      }
+      const snippet = generateSnippet(`${doc.title} ${plainText}`, matches);
 
       return {
         id: doc.id,

@@ -1,6 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createYjsProvider } from "@/collab/yjs-provider";
+import { setupAwareness } from "@/collab/awareness";
+import { getCommentsMap } from "@/collab/comments";
+import { CollabToolbar } from "./CollabToolbar";
+import { SuggestionPanel, Suggestion } from "./SuggestionMode";
 import EditorJS, { OutputData, ToolConstructable } from "@editorjs/editorjs";
 import Header from "@editorjs/header";
 import Paragraph from "@editorjs/paragraph";
@@ -19,6 +24,8 @@ import InlineCode from "@editorjs/inline-code";
 import Checklist from "@editorjs/checklist";
 // @ts-ignore - @editorjs/delimiter has type issues
 import Delimiter from "@editorjs/delimiter";
+import IFrameEmbed from "./EmbedTool";
+import { TemplateLibrary } from "./TemplateLibrary";
 
 interface NotionEditorProps {
   initialData?: OutputData;
@@ -26,6 +33,8 @@ interface NotionEditorProps {
   onSave?: (data: OutputData) => void;
   placeholder?: string;
   readOnly?: boolean;
+  docId?: string; // for Yjs room
+  user?: { id: string; name: string; color: string };
 }
 
 // Slash command tool for block insertion
@@ -85,12 +94,19 @@ export function NotionEditor({
   onSave,
   placeholder = "Start typing or press / for commands...",
   readOnly = false,
+  docId = "default-doc",
+  user = { id: "anon", name: "Anonymous", color: "#888" },
 }: NotionEditorProps) {
   const editorContainer = useRef<HTMLDivElement>(null);
   const editorInstance = useRef<EditorJS | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [content, setContent] = useState<OutputData | null>(initialData || null);
+  // Collab state
+  const [users, setUsers] = useState<Array<{ id: string; name: string; color: string }>>([]);
+  const [suggestionMode, setSuggestionMode] = useState(false);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
 
   const handleSave = useCallback(async () => {
     if (!editorInstance.current) return;
@@ -122,6 +138,23 @@ export function NotionEditor({
   useEffect(() => {
     if (!editorContainer.current) return;
 
+    // --- Yjs setup ---
+    const { ydoc, provider } = createYjsProvider(docId, user);
+    const awareness = provider ? setupAwareness(ydoc, provider, user) : null;
+    
+    // Listen for awareness updates (presence)
+    const onAwarenessUpdate = () => {
+      if (!awareness) return;
+      const states = Array.from(awareness.getStates().values());
+      setUsers(states.map((s: any) => s.user).filter(Boolean));
+    };
+    
+    if (awareness) {
+      awareness.on('change', onAwarenessUpdate);
+      onAwarenessUpdate();
+    }
+
+    // --- EditorJS tools ---
     const tools: Record<string, ToolConstructable | any> = {
       header: {
         class: Header,
@@ -178,6 +211,13 @@ export function NotionEditor({
           },
         },
       },
+      customEmbed: {
+        class: IFrameEmbed,
+        inlineToolbar: true,
+        config: {
+          placeholder: "Paste any embed URL (YouTube, Loom, Figma, PDF, etc.)",
+        },
+      },
       table: {
         class: Table,
         inlineToolbar: true,
@@ -188,39 +228,113 @@ export function NotionEditor({
       delimiter: Delimiter,
     };
 
+    // --- Yjs <-> EditorJS sync ---
+    let ignoreYjs = false;
+    let ignoreEditor = false;
+
+    // Load initial data from Yjs or fallback
+    const yContent = ydoc.getText('content');
+
     const editor = new EditorJS({
       holder: editorContainer.current,
       tools,
-      data: initialData || {
-        blocks: [
-          {
-            type: "paragraph",
-            data: { text: placeholder },
-          },
-        ],
-      },
+      data: initialData || { blocks: [{ type: "paragraph", data: { text: placeholder } }] },
       placeholder: placeholder,
       readOnly: readOnly,
       onReady: () => {
         setIsLoading(false);
         editorInstance.current?.focus();
+        // If Yjs has content, load it
+        if (yContent.length > 0) {
+          try {
+            const yData = JSON.parse(yContent.toString());
+            editorInstance.current?.render(yData);
+          } catch {}
+        }
       },
-      onChange: handleChange,
+      onChange: async () => {
+        if (ignoreEditor) return;
+        try {
+          const outputData = await editorInstance.current!.save();
+          setContent(outputData);
+          onChange?.(outputData);
+          // Push to Yjs
+          ignoreYjs = true;
+          yContent.delete(0, yContent.length);
+          yContent.insert(0, JSON.stringify(outputData));
+          ignoreYjs = false;
+        } catch (error) {
+          console.error("Change detection failed:", error);
+        }
+      },
       autofocus: true,
     });
-
     editorInstance.current = editor;
 
+    // Listen for Yjs changes
+    const yHandler = () => {
+      if (ignoreYjs) return;
+      try {
+        const yData = JSON.parse(yContent.toString());
+        ignoreEditor = true;
+        editorInstance.current?.render(yData);
+        setContent(yData);
+        ignoreEditor = false;
+      } catch {}
+    };
+    yContent.observe(yHandler);
+
     return () => {
+      yContent.unobserve(yHandler);
+      if (awareness) {
+        awareness.off('change', onAwarenessUpdate);
+      }
+      if (provider) {
+        provider.destroy();
+      }
+      ydoc.destroy();
       if (editorInstance.current) {
         editorInstance.current.destroy();
         editorInstance.current = null;
       }
     };
-  }, [initialData, placeholder, readOnly, handleChange]);
+  }, [initialData, placeholder, readOnly, handleChange, docId, user]);
+
+  const insertTemplateBlocks = useCallback(async (blocks: any[]) => {
+    if (!editorInstance.current || !Array.isArray(blocks) || blocks.length === 0) return;
+    const blocksApi = (editorInstance.current as any).blocks;
+    try {
+      for (const block of blocks) {
+        blocksApi.insert(block.type, block.data, {}, undefined);
+      }
+    } catch (error) {
+      console.error("Error inserting template blocks:", error);
+    }
+  }, []);
+
+  const handleSaveTemplate = useCallback(async (name: string) => {
+    if (!editorInstance.current) return;
+    const output = await editorInstance.current.save();
+    const response = await fetch("/api/templates", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name, blocks: output.blocks }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData?.error || "Unable to save template");
+    }
+  }, []);
 
   return (
     <div className="notion-editor-wrapper">
+      <CollabToolbar
+        users={users}
+        suggestionMode={suggestionMode}
+        onToggleSuggestion={() => setSuggestionMode((v) => !v)}
+      />
       <style>{`
         .notion-editor-wrapper {
           width: 100%;
@@ -386,7 +500,59 @@ export function NotionEditor({
         .ce-settings__button:hover {
           background: #f3f4f6;
         }
+
+        .embed-tool {
+          padding: 1rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 0.75rem;
+          background: #f8fafc;
+        }
+
+        .embed-tool__label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+          color: #334155;
+          font-weight: 600;
+        }
+
+        .embed-tool__input,
+        .embed-tool__caption {
+          width: 100%;
+          margin-bottom: 0.75rem;
+          padding: 0.75rem 1rem;
+          border: 1px solid #cbd5e1;
+          border-radius: 0.75rem;
+          background: white;
+          font-size: 0.95rem;
+          color: #0f172a;
+        }
+
+        .embed-tool__preview {
+          position: relative;
+          display: grid;
+          gap: 0.75rem;
+        }
+
+        .embed-tool__iframe {
+          width: 100%;
+          min-height: 320px;
+          border: 1px solid #cbd5e1;
+          border-radius: 0.75rem;
+        }
+
+        .embed-tool__caption-text {
+          font-size: 0.95rem;
+          color: #475569;
+        }
       `}</style>
+
+      <TemplateLibrary
+        open={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+        onInsert={insertTemplateBlocks}
+        onSave={handleSaveTemplate}
+      />
 
       {isLoading && (
         <div className="flex items-center justify-center p-8">
@@ -394,24 +560,48 @@ export function NotionEditor({
         </div>
       )}
 
-      <div
-        ref={editorContainer}
-        id="notion-editor"
-        className={isLoading ? "hidden" : ""}
-      />
+      <div className="flex">
+        <div className="flex-1">
+          <div
+            ref={editorContainer}
+            id="notion-editor"
+            className={isLoading ? "hidden" : ""}
+          />
 
-      <div className="flex gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="rounded bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
-        >
-          {isSaving ? "Saving..." : "Save"}
-        </button>
-        <div className="flex-1" />
-        <div className="text-sm text-slate-500">
-          {content?.blocks.length || 0} blocks
+          <div className="flex gap-3 border-t border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="rounded bg-blue-600 px-4 py-2 text-white font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+            <button
+              onClick={() => setShowTemplateLibrary(true)}
+              className="rounded bg-slate-100 px-4 py-2 text-slate-700 font-medium hover:bg-slate-200"
+            >
+              Templates
+            </button>
+          </div>
+          <div className="flex-1" />
+          <div className="text-sm text-slate-500">
+            {content?.blocks.length || 0} blocks {suggestionMode && ` · ${suggestions.filter((s) => s.accepted === undefined).length} pending suggestions`}
+          </div>
+          </div>
         </div>
+
+        {suggestionMode && (
+          <SuggestionPanel
+            suggestions={suggestions}
+            onAccept={(id) => {
+              setSuggestions(suggestions.map((s) => (s.id === id ? { ...s, accepted: true } : s)));
+            }}
+            onReject={(id) => {
+              setSuggestions(suggestions.map((s) => (s.id === id ? { ...s, accepted: false } : s)));
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,13 @@ A self-hosted, open-source **internal** documentation platform built with Next.j
   - Auto-save with version tracking
   - Undo / redo
 
+- **Real-Time Collaboration** ⭐ (Phase 1 — NEW!)
+  - **Live co-editing**: Multiple users editing simultaneously with Yjs CRDT
+  - **User presence**: See who's currently editing in real-time
+  - **Suggestion mode**: Propose edits, accept/reject changes
+  - **Inline comments**: Add threaded comments on any block
+  - **WebSocket-based sync**: Sub-100ms latency
+
 - **Document Management**
   - Create, read, update, delete documents
   - Draft / Published / Archived status
@@ -47,6 +54,13 @@ A self-hosted, open-source **internal** documentation platform built with Next.j
 ## 🚀 Quick Start
 
 See **[QUICKSTART.md](QUICKSTART.md)** for a 3-minute walkthrough.
+
+### Testing Collaboration (Phase 1)
+```bash
+npm run dev  # Starts Next.js + Yjs WebSocket server
+```
+Then open the same document in 2 browser tabs to see real-time sync! See [PHASE1-QUICKSTART.md](docs/PHASE1-QUICKSTART.md) for details.
+
 
 ```bash
 git clone <your-repo-url>

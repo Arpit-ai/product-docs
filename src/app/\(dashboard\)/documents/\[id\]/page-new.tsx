@@ -15,7 +15,6 @@ export default function DocumentPage() {
   const [folders, setFolders] = useState<any[]>([]);
   const [versions, setVersions] = useState<any[]>([]);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [user, setUser] = useState<{ id: string; name: string; color: string }>({ id: "anon", name: "Anonymous", color: "#888" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
@@ -30,19 +29,16 @@ export default function DocumentPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const meRes = await fetch("/api/auth/me", { credentials: "include" });
-        const docRes = await fetch(`/api/documents/${id}`, { credentials: "include" });
-        const foldersRes = await fetch("/api/folders", { credentials: "include" });
-        const versionsRes = await fetch(`/api/documents/${id}/versions`, { credentials: "include" });
+        const [meRes, docRes, foldersRes, versionsRes] = await Promise.all([
+          fetch("/api/auth/me", { credentials: "include" }),
+          fetch(`/api/documents/${id}`, { credentials: "include" }),
+          fetch("/api/folders", { credentials: "include" }),
+          fetch(`/api/documents/${id}/versions`, { credentials: "include" }),
+        ]);
 
         if (meRes.ok) {
           const me = await meRes.json();
           setUserRole(me.role);
-          setUser({
-            id: me.id || "anon",
-            name: me.name || "Anonymous",
-            color: me.color || "#3b82f6",
-          });
         }
 
         if (!docRes.ok) {
@@ -54,9 +50,11 @@ export default function DocumentPage() {
         setDocument(doc);
         setTitle(doc.title);
 
+        // Parse content if it's EditorJS format, otherwise convert from HTML
         try {
           setEditorContent(JSON.parse(doc.content));
         } catch {
+          // Fallback for old HTML content
           setEditorContent({
             blocks: [
               {
@@ -120,6 +118,7 @@ export default function DocumentPage() {
       setDocument(updatedDoc);
       setSuccess("Document saved successfully!");
 
+      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
       console.error("Error saving document:", err);
@@ -139,6 +138,7 @@ export default function DocumentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-sm shadow-sm">
         <div className="mx-auto max-w-6xl px-6 py-4">
           <div className="flex items-center justify-between gap-4">
@@ -176,6 +176,7 @@ export default function DocumentPage() {
             </div>
           </div>
 
+          {/* Metadata */}
           <div className="mt-4 flex items-center gap-4 text-sm text-slate-600">
             <div>
               {document?.author && (
@@ -202,7 +203,9 @@ export default function DocumentPage() {
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="mx-auto max-w-6xl px-6 py-8">
+        {/* Alerts */}
         {error && (
           <div className="mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-red-800">
             {error}
@@ -214,6 +217,7 @@ export default function DocumentPage() {
           </div>
         )}
 
+        {/* Editor Section */}
         <div className="grid gap-8 lg:grid-cols-[1fr_300px]">
           <div>
             <div className="rounded-2xl bg-white shadow-sm border border-slate-200">
@@ -223,8 +227,6 @@ export default function DocumentPage() {
                   onSave={handleSave}
                   readOnly={readOnly}
                   placeholder="Start typing or press / for commands..."
-                  docId={id}
-                  user={user}
                 />
               ) : (
                 <div className="p-8 text-center text-slate-500">
@@ -234,7 +236,9 @@ export default function DocumentPage() {
             </div>
           </div>
 
+          {/* Sidebar */}
           <aside className="space-y-6">
+            {/* Folder Selection */}
             {!readOnly && (
               <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
@@ -255,6 +259,7 @@ export default function DocumentPage() {
               </div>
             )}
 
+            {/* Version History */}
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <button
                 onClick={() => setShowVersions(!showVersions)}
@@ -289,6 +294,7 @@ export default function DocumentPage() {
               )}
             </div>
 
+            {/* Document Info */}
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-600 mb-3">
                 Document Info

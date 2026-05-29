@@ -5,17 +5,18 @@ This file tracks major feature ideas and breaks them into actionable phases for 
 ---
 
 ## Phase 1: Collaboration & Comments
-- [ ] Real-time collaborative editing (WebSocket, Yjs, or similar)
-- [ ] Show live cursors and selections for all users
-- [ ] Inline comments on blocks or text
-- [ ] Suggestion mode (propose edits, accept/reject changes)
+- [x] Real-time collaborative editing (Yjs + y-websocket)
+- [~] Show live cursors and selections for all users (awareness framework in place, UI pending)
+- [~] Inline comments on blocks or text (UI components ready, persistence pending)
+- [x] Suggestion mode (propose edits, accept/reject changes)
 
 ## Phase 2: Search, Media, and Templates
-- [ ] Full-text search with context highlighting
-- [ ] Search across docs, folders, and comments
-- [ ] Rich media embeds (Figma, Miro, Google Drive, Loom, PDF, etc.)
-- [ ] Custom block for any iframe/embed
-- [ ] Custom block templates (save/reuse block structures)
+- [x] Full-text search with context highlighting
+- [x] Search across docs and folders
+- [~] Search across comments
+- [x] Rich media embeds (Figma, Miro, Google Drive, Loom, PDF, etc.)
+- [x] Custom block for any iframe/embed
+- [x] Custom block templates (save/reuse block structures)
 
 ## Phase 3: Boards, Permissions, and Branding
 - [ ] Kanban boards for project/task management
