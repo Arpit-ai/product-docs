@@ -22,9 +22,9 @@ This file tracks major feature ideas and breaks them into actionable phases for 
 - [x] Fine-grained permissions (database schema, service, API routes)
 - [x] Access control UI (share, manage permissions)
 - [x] Public share links with expiration
-- [ ] Kanban boards for project/task management
-- [ ] Advanced tables (sorting, filtering, formulas)
-- [ ] Custom branding, white-label UI, dark mode
+- [x] Kanban boards for project/task management (KanbanBlock + /boards page)
+- [x] Advanced tables (sorting, filtering, formulas, column types)
+- [x] Custom branding, white-label UI, dark mode (ThemeProvider + ThemeToggle + /settings)
 
 ## Phase 4: AI, Import/Export, Integrations
 - [ ] AI-powered block: generate, summarize, translate, fix grammar

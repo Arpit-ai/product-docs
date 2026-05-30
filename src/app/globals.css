@@ -1,1 +1,104 @@
 @import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* CSS custom properties — light mode defaults                         */
+/* ------------------------------------------------------------------ */
+:root {
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-text: #374151;
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark mode overrides (toggled via .dark on <html>)                   */
+/* ------------------------------------------------------------------ */
+.dark {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-accent: #60a5fa;
+  --color-accent-hover: #3b82f6;
+  --color-sidebar-bg: #1e293b;
+  --color-sidebar-text: #cbd5e1;
+}
+
+/* Apply dark background/text to the whole page in dark mode */
+.dark body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* Sidebar dark mode */
+.dark aside {
+  background-color: var(--color-sidebar-bg) !important;
+  border-color: var(--color-border) !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Table enhancer styles                                               */
+/* ------------------------------------------------------------------ */
+.table-enhancer-wrapper {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  margin: 1rem 0;
+}
+
+.table-enhancer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table-enhancer-filter {
+  flex: 1;
+  min-width: 160px;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.table-enhancer-filter:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+.table-enhancer-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.table-enhancer-sort-button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.table-enhancer-sort-button:hover {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}

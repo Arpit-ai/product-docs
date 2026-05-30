@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { SearchBox } from "@/components/Search/SearchBox";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function DashboardLayout({
   children,
@@ -72,17 +73,29 @@ export default function DashboardLayout({
           >
             Public Docs
           </Link>
+          <Link
+            href="/boards"
+            className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Boards
+          </Link>
+          <Link
+            href="/settings"
+            className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded dark:text-gray-300 dark:hover:bg-gray-700"
+          >
+            Settings
+          </Link>
           {user?.role === "ADMIN" && (
             <>
               <Link
                 href="/users"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Users
               </Link>
               <Link
                 href="/activity"
-                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
+                className="block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded dark:text-gray-300 dark:hover:bg-gray-700"
               >
                 Activity
               </Link>
@@ -104,9 +117,10 @@ export default function DashboardLayout({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto dark:bg-gray-900">
         <div className="p-8">{children}</div>
       </main>
+      <ThemeToggle />
     </div>
   );
 }
