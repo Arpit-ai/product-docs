@@ -26,6 +26,8 @@ import Checklist from "@editorjs/checklist";
 import Delimiter from "@editorjs/delimiter";
 import IFrameEmbed from "./EmbedTool";
 import { TemplateLibrary } from "./TemplateLibrary";
+import { ShareModal } from "../AccessControl/ShareModal";
+import { AccessControlModal } from "../AccessControl/AccessControlModal";
 
 interface NotionEditorProps {
   initialData?: OutputData;
@@ -107,6 +109,8 @@ export function NotionEditor({
   const [suggestionMode, setSuggestionMode] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showAccessModal, setShowAccessModal] = useState(false);
 
   const handleSave = useCallback(async () => {
     if (!editorInstance.current) return;
@@ -554,6 +558,18 @@ export function NotionEditor({
         onSave={handleSaveTemplate}
       />
 
+      <ShareModal 
+        documentId={docId} 
+        isOpen={showShareModal} 
+        onClose={() => setShowShareModal(false)} 
+      />
+
+      <AccessControlModal 
+        documentId={docId} 
+        isOpen={showAccessModal} 
+        onClose={() => setShowAccessModal(false)} 
+      />
+
       {isLoading && (
         <div className="flex items-center justify-center p-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -583,6 +599,22 @@ export function NotionEditor({
             >
               Templates
             </button>
+            {docId && docId !== "default-doc" && (
+              <>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="rounded bg-slate-100 px-4 py-2 text-slate-700 font-medium hover:bg-slate-200"
+                >
+                  Share
+                </button>
+                <button
+                  onClick={() => setShowAccessModal(true)}
+                  className="rounded bg-slate-100 px-4 py-2 text-slate-700 font-medium hover:bg-slate-200"
+                >
+                  Access
+                </button>
+              </>
+            )}
           </div>
           <div className="flex-1" />
           <div className="text-sm text-slate-500">

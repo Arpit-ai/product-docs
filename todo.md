@@ -19,10 +19,11 @@ This file tracks major feature ideas and breaks them into actionable phases for 
 - [x] Custom block templates (save/reuse block structures)
 
 ## Phase 3: Boards, Permissions, and Branding
+- [x] Fine-grained permissions (database schema, service, API routes)
+- [x] Access control UI (share, manage permissions)
+- [x] Public share links with expiration
 - [ ] Kanban boards for project/task management
 - [ ] Advanced tables (sorting, filtering, formulas)
-- [ ] Per-folder or per-doc access control (read, comment, edit, admin)
-- [ ] Shareable public links with expiration
 - [ ] Custom branding, white-label UI, dark mode
 
 ## Phase 4: AI, Import/Export, Integrations

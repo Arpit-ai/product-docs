@@ -25,6 +25,9 @@ model User {
   uploads     Media[]
   activityLogs ActivityLog[]
   templates   Template[]
+  documentAccess DocumentAccess[]
+  folderAccess FolderAccess[]
+  sharedLinks SharedLink[]
 
   @@map("users")
 }
@@ -32,6 +35,13 @@ model User {
 enum UserRole {
   ADMIN
   EDITOR
+  VIEWER
+}
+
+enum AccessRole {
+  OWNER
+  EDITOR
+  COMMENTER
   VIEWER
 }
 
@@ -48,6 +58,7 @@ model Folder {
   children  Folder[]   @relation("FolderHierarchy")
   documents Document[]
   templates Template[]
+  folderAccess FolderAccess[]
 
   @@map("folders")
 }
@@ -68,6 +79,7 @@ model Document {
   versions     Version[]
   tags         Tag[]
   activityLogs ActivityLog[]
+  documentAccess DocumentAccess[]
 
   @@map("documents")
 }
@@ -142,4 +154,65 @@ model Template {
   user      User     @relation(fields: [createdBy], references: [id])
 
   @@map("templates")
+}
+
+model DocumentAccess {
+  id        String   @id @default(cuid())
+  documentId String
+  userId    String?
+  email     String?
+  role      AccessRole @default(VIEWER)
+  createdAt DateTime @default(now())
+  expiresAt DateTime?
+
+  document  Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@unique([documentId, email])
+  @@map("document_access")
+}
+
+model FolderAccess {
+  id       String   @id @default(cuid())
+  folderId String
+  userId   String
+  role     AccessRole @default(VIEWER)
+  createdAt DateTime @default(now())
+
+  folder   Folder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([folderId, userId])
+  @@map("folder_access")
+}
+
+model SharedLink {
+  id          String   @id @default(cuid())
+  resourceType String  // "document" or "folder"
+  resourceId  String
+  token       String   @unique
+  expiresAt   DateTime?
+  password    String?
+  viewCount   Int      @default(0)
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  user        User    @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([resourceId])
+  @@map("shared_links")
+}
+
+model Invitation {
+  id       String   @id @default(cuid())
+  email    String
+  resourceType String // "document" or "folder"
+  resourceId String
+  role     AccessRole
+  accepted Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([email, resourceId])
+  @@map("invitations")
 }
