@@ -28,6 +28,8 @@ model User {
   documentAccess DocumentAccess[]
   folderAccess FolderAccess[]
   sharedLinks SharedLink[]
+  aiRequests AIRequest[]
+  apiTokens  ApiToken[]
 
   @@map("users")
 }
@@ -80,6 +82,7 @@ model Document {
   tags         Tag[]
   activityLogs ActivityLog[]
   documentAccess DocumentAccess[]
+  aiRequests AIRequest[]
 
   @@map("documents")
 }
@@ -215,4 +218,73 @@ model Invitation {
 
   @@unique([email, resourceId])
   @@map("invitations")
+}
+
+model AIRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  documentId String
+  operation String   // "generate", "summarize", "translate", "fixGrammar", "qa"
+  inputText String   
+  outputText String  
+  metadata  String?  // JSON string for additional context
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document  Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([documentId])
+  @@map("ai_requests")
+}
+
+model ApiToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  name      String
+  userId    String
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  lastUsedAt DateTime?
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_tokens")
+}
+
+model WebhookEndpoint {
+  id        String   @id @default(cuid())
+  userId    String
+  url       String
+  secret    String
+  events    String   // JSON array of event types
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id         String   @id @default(cuid())
+  endpointId String
+  eventType  String
+  payload    String   // JSON payload
+  status     String   // "pending", "delivered", "failed"
+  statusCode Int?
+  retries    Int      @default(0)
+  error      String?
+  createdAt  DateTime @default(now())
+  deliveredAt DateTime?
+
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([endpointId])
+  @@index([status])
+  @@map("webhook_deliveries")
 }

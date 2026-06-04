@@ -7,7 +7,12 @@
       "Bash(git remote *)",
       "Bash(git branch *)",
       "Bash(git push *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Skill(update-config)",
+      "Bash(cat)",
+      "Bash(sed -i '' '30r /tmp/schema_update.txt' prisma/schema.prisma)",
+      "Bash(sed -i '' '83r /tmp/doc_update.txt' prisma/schema.prisma)",
+      "Bash(sed -i '' '31r /tmp/apitoken_update.txt' prisma/schema.prisma)"
     ]
   }
 }

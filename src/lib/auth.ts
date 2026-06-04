@@ -71,3 +71,41 @@ export async function getCurrentUser(): Promise<JWTPayload | null> {
   if (!token) return null;
   return verifyToken(token);
 }
+
+import { NextRequest } from "next/server";
+import { validateApiToken } from "./apiToken";
+
+export interface AuthContext {
+  userId: string;
+  email?: string;
+  role?: string;
+}
+
+export async function validateAuth(request: NextRequest): Promise<AuthContext | null> {
+  const authHeader = request.headers.get("Authorization") || "";
+
+  // Try Bearer token (JWT or API token)
+  if (authHeader.startsWith("Bearer ")) {
+    const token = authHeader.substring(7);
+
+    // First try as JWT
+    const jwtPayload = verifyToken(token);
+    if (jwtPayload) {
+      return {
+        userId: jwtPayload.userId,
+        email: jwtPayload.email,
+        role: jwtPayload.role,
+      };
+    }
+
+    // Then try as API token
+    const apiTokenResult = await validateApiToken(token);
+    if (apiTokenResult.valid && apiTokenResult.userId) {
+      return {
+        userId: apiTokenResult.userId,
+      };
+    }
+  }
+
+  return null;
+}
