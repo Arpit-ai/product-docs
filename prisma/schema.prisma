@@ -31,6 +31,8 @@ model User {
   aiRequests AIRequest[]
   apiTokens  ApiToken[]
 
+  notifications Notification[]
+  notificationPreference NotificationPreference?
   @@map("users")
 }
 
@@ -287,4 +289,43 @@ model WebhookDelivery {
   @@index([endpointId])
   @@index([status])
   @@map("webhook_deliveries")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "mention", "comment", "share", "update"
+  title     String
+  message   String
+  resourceType String?  // "document", "comment", etc
+  resourceId String?
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([read])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  emailMentions Boolean @default(true)
+  emailComments Boolean @default(true)
+  emailShares Boolean @default(true)
+  emailUpdates Boolean @default(false)
+  emailDigestFrequency String @default("instant")  // "instant", "daily", "weekly"
+  inAppMentions Boolean @default(true)
+  inAppComments Boolean @default(true)
+  inAppShares Boolean @default(true)
+  inAppUpdates Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
 }
