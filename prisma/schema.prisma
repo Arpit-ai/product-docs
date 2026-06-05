@@ -30,6 +30,7 @@ model User {
   sharedLinks SharedLink[]
   aiRequests AIRequest[]
   apiTokens  ApiToken[]
+  webhookEndpoints WebhookEndpoint[]
 
   notifications Notification[]
   notificationPreference NotificationPreference?
